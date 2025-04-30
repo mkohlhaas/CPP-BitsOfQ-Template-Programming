@@ -1,8 +1,7 @@
 #include <iostream>
-#include <list>
-#include <string>
-#include <tuple>
-#include <vector>
+#include <type_traits>
+
+// has_type ✓
 
 template <typename T>
 struct has_type
@@ -10,9 +9,7 @@ struct has_type
     using type = T;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////// IF_ /////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+// if_ ✓
 
 template <bool condition, typename THEN, typename ELSE>
 struct if_;
@@ -27,19 +24,23 @@ struct if_<false, THEN, ELSE> : has_type<ELSE>
 {
 };
 
+template <bool condition, typename THEN, typename ELSE>
+using if_t = typename if_<condition, THEN, ELSE>::type;
+
 static_assert(std::is_same_v<typename if_<(10 > 5), int, bool>::type, int>);
 static_assert(std::is_same_v<typename if_<(10 < 5), int, bool>::type, bool>);
 
-///////////////////////////////////////////////////////////////////////////////
-/////////////////////////// TYPE LIST MANIPULATION ////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+static_assert(std::is_same_v<if_t<(10 > 5), int, bool>, int>);
+static_assert(std::is_same_v<if_t<(10 < 5), int, bool>, bool>);
+
+// type_list ✓
 
 template <typename...>
 struct type_list
 {
 };
 
-/////////////////////////////////// EMTPY /////////////////////////////////////
+// empty ✓
 
 template <typename LIST>
 struct empty : std::false_type
@@ -52,12 +53,12 @@ struct empty<type_list<>> : std::true_type
 };
 
 template <typename LIST>
-static constexpr bool empty_v = empty<LIST>::value;
+inline constexpr bool empty_v = empty<LIST>::value;
 
 static_assert(empty_v<type_list<>>);
 static_assert(empty_v<type_list<int, bool>> == false);
 
-/////////////////////////////////// FRONT /////////////////////////////////////
+// front ✓
 
 template <typename LIST>
 struct front;
@@ -72,7 +73,7 @@ using front_t = typename front<LIST>::type;
 
 static_assert(std::is_same_v<front_t<type_list<int, bool, float>>, int>);
 
-///////////////////////////////// POP_FRONT ///////////////////////////////////
+// pop_front ✓
 
 template <typename LIST>
 struct pop_front;
@@ -87,8 +88,9 @@ using pop_front_t = typename pop_front<LIST>::type;
 
 static_assert(std::is_same_v<pop_front_t<type_list<int, bool, float>>, type_list<bool, float>>);
 
-//////////////////////////////////// BACK /////////////////////////////////////
+// back ✓
 
+// prerequisite: type_list is not empty
 template <typename LIST>
 struct back : has_type<typename back<pop_front_t<LIST>>::type>
 {
@@ -105,7 +107,7 @@ using back_t = typename back<LIST>::type;
 static_assert(std::is_same_v<back_t<type_list<int, bool, float>>, float>);
 static_assert(std::is_same_v<back_t<type_list<int, bool, bool>>, bool>);
 
-///////////////////////////////// PUSH_BACK ///////////////////////////////////
+// push_back ✓
 
 template <typename LIST, typename T>
 struct push_back;
@@ -121,8 +123,9 @@ using push_back_t = typename push_back<LIST, T>::type;
 static_assert(std::is_same_v<push_back_t<type_list<>, int>, type_list<int>>);
 static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list<int, bool, float>>);
 
-////////////////////////////////// POP_BACK ///////////////////////////////////
+// pop_back ✓
 
+// prerequisite: type_list is not empty
 template <typename LIST, typename RET_LIST = type_list<>>
 struct pop_back;
 
@@ -131,8 +134,8 @@ struct pop_back<type_list<T0>, RET_LIST> : has_type<RET_LIST>
 {
 };
 
-template <typename T0, typename T1, typename... T2toN, typename RET_LIST>
-struct pop_back<type_list<T0, T1, T2toN...>, RET_LIST> : pop_back<type_list<T1, T2toN...>, push_back_t<RET_LIST, T0>>
+template <typename T0, typename... T1toN, typename RET_LIST>
+struct pop_back<type_list<T0, T1toN...>, RET_LIST> : pop_back<type_list<T1toN...>, push_back_t<RET_LIST, T0>>
 {
 };
 
@@ -143,9 +146,9 @@ static_assert(std::is_same_v<pop_back_t<type_list<int>>, type_list<>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int, bool, float>>, type_list<int, bool>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int, bool>>, type_list<int>>);
 
-///////////////////////////////////// AT //////////////////////////////////////
+// at ✓
 
-template <typename LIST, size_t index>
+template <typename LIST, std::size_t index>
 struct at : has_type<typename at<pop_front_t<LIST>, index - 1>::type>
 {
 };
@@ -155,13 +158,14 @@ struct at<LIST, 0> : has_type<front_t<LIST>>
 {
 };
 
-template <typename LIST, size_t index>
+template <typename LIST, std::size_t index>
 using at_t = typename at<LIST, index>::type;
 
+static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 0>, int>);
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 1>, bool>);
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 2>, float>);
 
-/////////////////////////////// CONTAINS_TYPE /////////////////////////////////
+// contains_type ✓
 
 template <typename SEARCH, typename LIST>
 struct contains_type : if_< // IF
@@ -179,15 +183,25 @@ struct contains_type<SEARCH, type_list<>> : std::false_type
 };
 
 template <typename SEARCH, typename LIST>
-static constexpr bool contains_type_v = contains_type<SEARCH, LIST>::value;
+inline constexpr bool contains_type_v = contains_type<SEARCH, LIST>::value;
 
 static_assert(contains_type_v<int, type_list<int, bool, float>>);
 static_assert(contains_type_v<float, type_list<int, bool, float>>);
 static_assert(contains_type_v<double, type_list<int, bool, float>> == false);
 
-///////////////////////////////////////////////////////////////////////////////
+// main
 
 int
 main()
 {
+    std::cout << std::boolalpha;
+
+    type_list<int, bool, double> types;
+    std::cout << contains_type<bool, type_list<>>::value << '\n';      // false
+    std::cout << contains_type<bool, decltype(types)>::value << '\n';  // true
+    std::cout << contains_type<float, decltype(types)>::value << '\n'; // false
+
+    std::cout << contains_type_v<bool, type_list<>> << '\n';           // false
+    std::cout << contains_type_v<bool, decltype(types)> << '\n';       // true
+    std::cout << contains_type_v<float, decltype(types)> << '\n';      // false
 }

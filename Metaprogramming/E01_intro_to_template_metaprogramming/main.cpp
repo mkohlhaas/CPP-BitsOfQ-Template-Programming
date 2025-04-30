@@ -4,7 +4,7 @@
 template <typename T>
 struct is_pointer
 {
-    static constexpr bool value = false;
+    static constexpr bool value = false; // return values as static constexpr
 };
 
 template <typename T>
@@ -16,7 +16,7 @@ struct is_pointer<T *>
 template <typename T>
 struct strip_pointer
 {
-    using type = T;
+    using type = T; // return types as type aliases
 };
 
 template <typename T>
@@ -30,6 +30,7 @@ void
 print1(T t)
 {
     using T_without_pointer = typename strip_pointer<T>::type;
+
     if constexpr (is_pointer<T>::value && std::is_floating_point<T_without_pointer>::value)
     {
         std::cout << *t;

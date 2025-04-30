@@ -1,15 +1,11 @@
-#ifndef BOQ_TUPLE_H
-#define BOQ_TUPLE_H
-
-#include <functional>
-#include <memory>
-#include <type_traits>
+#pragma once
 
 #include "Metaprogramming.h"
+#include <functional>
+#include <type_traits>
 
 namespace bits_of_q
 {
-
     template <typename... ELEMS>
     struct Tuple
     {
@@ -38,7 +34,7 @@ namespace bits_of_q
         return Tuple<std::unwrap_ref_decay_t<ELEMS>...>{std::forward<ELEMS>(elems)...};
     }
 
-    //////////////////////////// get ///////////////////////////
+    // get
 
     namespace detail
     {
@@ -56,20 +52,24 @@ namespace bits_of_q
             {
                 constexpr bool is_lvalue = std::is_lvalue_reference_v<T>;
                 constexpr bool is_const  = std::is_const_v<std::remove_reference_t<T>>;
-                using data_t             = front_t<TUPLE>;
+
+                using data_t = front_t<TUPLE>;
 
                 if constexpr (is_lvalue && is_const)
                 {
                     return static_cast<const data_t &>(static_cast<const TUPLE &>(t).data);
                 }
+
                 if constexpr (is_lvalue && !is_const)
                 {
                     return static_cast<data_t &>(static_cast<TUPLE &>(t).data);
                 }
+
                 if constexpr (!is_lvalue && is_const)
                 {
                     return static_cast<const data_t &&>(static_cast<const TUPLE &&>(t).data);
                 }
+
                 if constexpr (!is_lvalue && !is_const)
                 {
                     return static_cast<data_t &&>(static_cast<TUPLE &&>(t).data);
@@ -84,7 +84,4 @@ namespace bits_of_q
     {
         return detail::get_impl<i, std::remove_cvref_t<TUPLE>>::get(std::forward<TUPLE>(tuple));
     }
-
 } // namespace bits_of_q
-
-#endif // BOQ_TUPLE_H

@@ -1,17 +1,13 @@
-#ifndef BOQ_METAPROGRAMMING_H
-#define BOQ_METAPROGRAMMING_H
+#pragma once
 
 #include <cassert>
-#include <iostream>
-#include <list>
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <utility>
-#include <vector>
 
 namespace bits_of_q
 {
+    // has_type ✓
 
     template <typename T>
     struct has_type
@@ -19,9 +15,7 @@ namespace bits_of_q
         using type = T;
     };
 
-    ///////////////////////////////////////////////////////////////////////////////
-    ///////////////////////////////////// IF_ /////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
+    // if_ ✓
 
     template <bool condition, typename THEN, typename ELSE>
     struct if_;
@@ -36,19 +30,20 @@ namespace bits_of_q
     {
     };
 
-    static_assert(std::is_same_v<typename if_<(10 > 5), int, bool>::type, int>);
-    static_assert(std::is_same_v<typename if_<(10 < 5), int, bool>::type, bool>);
+    template <bool condition, typename THEN, typename ELSE>
+    using if_t = if_<condition, THEN, ELSE>::type;
 
-    ///////////////////////////////////////////////////////////////////////////////
-    /////////////////////////// TYPE LIST MANIPULATION ////////////////////////////
-    ///////////////////////////////////////////////////////////////////////////////
+    static_assert(std::is_same_v<if_t<(10 > 5), int, bool>, int>);
+    static_assert(std::is_same_v<if_t<(10 < 5), int, bool>, bool>);
+
+    // type_list ✓
 
     template <typename...>
     struct type_list
     {
     };
 
-    /////////////////////////////////// EMTPY /////////////////////////////////////
+    // empty ✓
 
     template <typename LIST>
     struct empty : std::false_type
@@ -66,7 +61,7 @@ namespace bits_of_q
     static_assert(empty_v<type_list<>>);
     static_assert(empty_v<type_list<int, bool>> == false);
 
-    /////////////////////////////////// FRONT /////////////////////////////////////
+    // front ✓
 
     template <typename LIST>
     struct front;
@@ -81,7 +76,7 @@ namespace bits_of_q
 
     static_assert(std::is_same_v<front_t<type_list<int, bool, float>>, int>);
 
-    ///////////////////////////////// POP_FRONT ///////////////////////////////////
+    // pop_front ✓
 
     template <typename LIST>
     struct pop_front;
@@ -96,7 +91,7 @@ namespace bits_of_q
 
     static_assert(std::is_same_v<pop_front_t<type_list<int, bool, float>>, type_list<bool, float>>);
 
-    /////////////////////////////////// BACK //////////////////////////////////////
+    // back ✓
 
     template <typename LIST>
     struct back : has_type<typename back<pop_front_t<LIST>>::type>
@@ -114,7 +109,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<back_t<type_list<int, bool, float>>, float>);
     static_assert(std::is_same_v<back_t<type_list<int, bool>>, bool>);
 
-    ///////////////////////////////// PUSH_BACK ///////////////////////////////////
+    // push_back ✓
 
     template <typename LIST, typename T>
     struct push_back;
@@ -130,7 +125,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<push_back_t<type_list<>, int>, type_list<int>>);
     static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list<int, bool, float>>);
 
-    ////////////////////////////////// POP_BACK ///////////////////////////////////
+    // make_same_container
 
     template <typename FROM_LIST, typename TO_LIST>
     struct make_same_container;
@@ -143,6 +138,8 @@ namespace bits_of_q
 
     template <typename FROM_LIST, typename TO_LIST>
     using make_same_container_t = typename make_same_container<FROM_LIST, TO_LIST>::type;
+
+    // pop_back ✓
 
     template <typename LIST, typename RET_LIST = make_same_container_t<type_list<>, LIST>>
     struct pop_back;
@@ -165,7 +162,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<pop_back_t<type_list<int, bool>>, type_list<int>>);
     static_assert(std::is_same_v<pop_back_t<std::tuple<int, bool>>, std::tuple<int>>);
 
-    //////////////////////////////////// AT ///////////////////////////////////////
+    // at ✓
 
     template <typename LIST, size_t index>
     struct at : has_type<typename at<pop_front_t<LIST>, index - 1>::type>
@@ -183,10 +180,13 @@ namespace bits_of_q
     static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 1>, bool>);
     static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 2>, float>);
 
-    //////////////////////////////////// ANY //////////////////////////////////////
+    // any ✓
 
     template <template <typename> class PREDICATE, typename LIST>
     struct any;
+
+    template <template <typename> class PREDICATE, typename LIST>
+    using any_t = any<PREDICATE, LIST>::type;
 
     template <template <typename> class PREDICATE, template <typename...> class LIST>
     struct any<PREDICATE, LIST<>> : std::false_type
@@ -194,12 +194,12 @@ namespace bits_of_q
     };
 
     template <template <typename> class PREDICATE, typename LIST>
-    struct any : if_< // if predicate matches first type
+    struct any : if_t< // if predicate matches first type
                      PREDICATE<front_t<LIST>>::value,
                      // then
                      std::true_type,
                      // else
-                     typename any<PREDICATE, pop_front_t<LIST>>::type>::type
+                     any_t<PREDICATE, pop_front_t<LIST>>>
     {
     };
 
@@ -210,7 +210,7 @@ namespace bits_of_q
     static_assert(any_v<std::is_integral, type_list<std::string, double, int>>);
     static_assert(!any_v<std::is_integral, type_list<std::string, double, float>>);
 
-    /////////////////////////////// CONTAINS_TYPE /////////////////////////////////
+    // contains_type ✓
 
     template <typename T>
     struct same_as_pred
@@ -227,9 +227,4 @@ namespace bits_of_q
     static_assert(contains_type_v<int, type_list<int, bool, float>>);
     static_assert(contains_type_v<float, type_list<int, bool, float>>);
     static_assert(contains_type_v<double, type_list<int, bool, float>> == false);
-
-    ///////////////////////////////////////////////////////////////////////////////
-
 } // namespace bits_of_q
-
-#endif // BOQ_METAPROGRAMMING_H

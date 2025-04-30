@@ -2,6 +2,8 @@
 #include <tuple>
 #include <type_traits>
 
+// Generic Print
+
 void
 printn()
 {
@@ -23,6 +25,8 @@ printn(T0 &&t, T1toN &&...rest)
     printn(std::forward<T1toN>(rest)...); // printn(std::forward<T1>(rest1), std::forward<T2>(rest2), ...)
 }
 
+// Tuple Print
+
 template <typename TUPLE, std::size_t... indices>
 void
 print_tuple_impl(TUPLE &&t, std::index_sequence<indices...>)
@@ -42,10 +46,9 @@ int
 main()
 {
     std::cout << std::boolalpha;
-    printn(9, "hello", 1.5, true);
-    printn();
-    printn("hello", "world");
-
     const auto tuple = std::make_tuple(9, "hello", 1.5, true);
-    print_tuple(tuple);
+    print_tuple(tuple);            // 9, hello, 1.5, true
+    printn(9, "hello", 1.5, true); // 9, hello, 1.5, true
+    printn();                      //
+    printn("hello", "world");      // hello, world
 }
