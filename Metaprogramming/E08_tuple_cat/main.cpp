@@ -1,12 +1,12 @@
-#include <iostream>
-
 #include "Metaprogramming.h"
 #include "TestUtilities.h"
 #include "Tuple.h"
 
 constexpr size_t boq_tuple = 1;
 constexpr size_t std_tuple = 2;
-namespace boq              = bits_of_q;
+
+namespace boq = bits_of_q;
+
 using boq::testing::Tester;
 using boq::testing::TesterWithBuilder;
 

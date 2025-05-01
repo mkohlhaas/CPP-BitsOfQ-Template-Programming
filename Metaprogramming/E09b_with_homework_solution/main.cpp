@@ -1,14 +1,14 @@
-#include <iostream>
-#include <type_traits>
-#include <utility>
-
 #include "Metaprogramming.h"
 #include "TestUtilities.h"
 #include "Tuple.h"
+#include <type_traits>
+#include <utility>
 
 constexpr size_t boq_tuple = 1;
 constexpr size_t std_tuple = 2;
-namespace boq              = bits_of_q;
+
+namespace boq = bits_of_q;
+
 using boq::testing::Tester;
 using boq::testing::TesterWithBuilder;
 
@@ -108,6 +108,7 @@ main()
                 return t.stats;
             }
         });
+
         // Tuple<int, CopyCounter, unsigned int> => Tuple<int, CopyStats, int>
         // Tuple{42, c, 12U} => Tuple{44, c.stats, 14}
 
@@ -240,6 +241,5 @@ main()
         auto tup3 = filter<std::is_reference>(std::forward<decltype(tup)>(tup));
         static_assert(std::is_same_v<decltype(tup3), Tuple<int &>>);
     });
-
     return 0;
 }

@@ -1,8 +1,6 @@
-#ifndef BOQ_TUPLE_H
-#define BOQ_TUPLE_H
+#pragma once
 
 #include <functional>
-#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -10,22 +8,24 @@
 
 namespace bits_of_q
 {
-
-    template <typename... ELEMS>
+    // empty tuple
+    template <typename...>
     struct Tuple
     {
         constexpr Tuple() = default;
     };
 
+    // tuple with at least one element
     template <typename ELEM0, typename... ELEMS1toN>
     struct Tuple<ELEM0, ELEMS1toN...> : Tuple<ELEMS1toN...>
     {
+        ELEM0 data;
+
         template <typename T, typename... Ts>
-        explicit constexpr Tuple(T &&e1, Ts &&...rest)
-            : Tuple<ELEMS1toN...>(std::forward<Ts>(rest)...), data(std::forward<T>(e1))
+        explicit constexpr Tuple(T &&e0, Ts &&...rest)
+            : Tuple<ELEMS1toN...>(std::forward<Ts>(rest)...), data(std::forward<T>(e0))
         {
         }
-        ELEM0 data;
     };
 
     // deduction guide to make template argument deduction for constructors work (C++17)
@@ -39,15 +39,17 @@ namespace bits_of_q
         return Tuple<std::unwrap_ref_decay_t<ELEMS>...>{std::forward<ELEMS>(elems)...};
     }
 
-    //////////////////////////// get ///////////////////////////
+    // get
 
     namespace detail
     {
+        // recur TUPLE
         template <size_t i, typename TUPLE>
         struct get_impl : get_impl<i - 1, pop_front_t<TUPLE>>
         {
         };
 
+        // element at index 0
         template <typename TUPLE>
         struct get_impl<0, TUPLE>
         {
@@ -57,22 +59,27 @@ namespace bits_of_q
             {
                 constexpr bool is_lvalue = std::is_lvalue_reference_v<T>;
                 constexpr bool is_const  = std::is_const_v<std::remove_reference_t<T>>;
-                using data_t             = front_t<TUPLE>;
+
+                using data_t = front_t<TUPLE>;
 
                 if constexpr (is_lvalue && is_const)
                 {
+                    // const &
                     return static_cast<const data_t &>(static_cast<const TUPLE &>(t).data);
                 }
                 if constexpr (is_lvalue && !is_const)
                 {
+                    // &
                     return static_cast<data_t &>(static_cast<TUPLE &>(t).data);
                 }
                 if constexpr (!is_lvalue && is_const)
                 {
+                    // const &&
                     return static_cast<const data_t &&>(static_cast<const TUPLE &&>(t).data);
                 }
                 if constexpr (!is_lvalue && !is_const)
                 {
+                    // &&
                     return static_cast<data_t &&>(static_cast<TUPLE &&>(t).data);
                 }
             }
@@ -81,6 +88,7 @@ namespace bits_of_q
 
     template <typename TUPLE>
     struct tuple_size;
+
     template <typename... ELEMS>
     struct tuple_size<Tuple<ELEMS...>> : std::integral_constant<size_t, sizeof...(ELEMS)>
     {
@@ -98,7 +106,6 @@ namespace bits_of_q
 
     namespace detail
     {
-
         template <typename INDEX_SEQ>
         struct make_tuple_from_fwd_tuple;
 
@@ -155,6 +162,7 @@ namespace bits_of_q
     constexpr decltype(auto)
     get(TUPLE &&tuple)
     {
+        // get(...) is by definition the value at searched index
         return detail::get_impl<i, std::remove_cvref_t<TUPLE>>::get(std::forward<TUPLE>(tuple));
     }
 
@@ -164,7 +172,4 @@ namespace bits_of_q
     {
         return detail::tuple_cat_impl::f(std::forward<TUPLES>(tuples)...);
     }
-
 } // namespace bits_of_q
-
-#endif // BOQ_TUPLE_H

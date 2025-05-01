@@ -112,7 +112,6 @@ namespace bits_of_q
 /// For any serious project, please use a well-established testing framework such as GoogleTest or Catch.
 namespace bits_of_q::testing
 {
-
     struct AssertFailed : std::runtime_error
     {
         explicit AssertFailed(std::string_view file_path, size_t line, std::string assert_expression)
@@ -200,16 +199,16 @@ namespace bits_of_q::testing
 
     class Tester
     {
-        /// Unix terminal color codes
-        /// Use fmt::format's color manipulation or if your compiler already supports it std::format for an easy
-        /// cross-platform alternative.
+        // Unix terminal color codes
+        // Use fmt::format's color manipulation or if your compiler already supports it std::format for an easy
+        // cross-platform alternative.
         static constexpr std::string_view color_reset = "\033[0m";
         static constexpr std::string_view color_red   = "\033[31m";
         static constexpr std::string_view color_green = "\033[32m";
 
       public:
-        /// Executes the function outputting a banner at the start and end as well as printing information on exceptions
-        /// thrown by the function.
+        // Executes the function outputting a banner at the start and end as well as printing information on exceptions
+        // thrown by the function.
         template <typename FUNC>
         static void
         test(std::string_view test_name, FUNC &&function)
@@ -268,19 +267,19 @@ namespace bits_of_q::testing
     class TesterWithBuilder
     {
       public:
-        /// Executes functions with a builder for different configurations(see above) as input.
-        /// Example:
-        /// if n_args == 2, the test function will execute the input function 4*4=16 times with the following builders
-        /// func(Builder<non_const_lvalue, non_const_lvalue)
-        /// func(Builder<const_lvalue, non_const_lvalue)
-        /// func(Builder<non_const_rvalue, non_const_lvalue)
-        /// func(Builder<const_rvalue, non_const_lvalue)
-        /// func(Builder<non_const_lvalue, const_lvalue)
-        /// func(Builder<const_lvalue, const_lvalue)
-        /// func(Builder<non_const_rvalue, const_lvalue)
-        /// func(Builder<const_lvalue, const_lvalue)
-        /// func(Builder<non_const_lvalue, non_const_rvalue)
-        /// ... etc, for all 4^2 = 16 input configurations
+        // Executes functions with a builder for different configurations(see above) as input.
+        // Example:
+        // if n_args == 2, the test function will execute the input function 4*4=16 times with the following builders
+        // func(Builder<non_const_lvalue, non_const_lvalue)
+        // func(Builder<const_lvalue, non_const_lvalue)
+        // func(Builder<non_const_rvalue, non_const_lvalue)
+        // func(Builder<const_rvalue, non_const_lvalue)
+        // func(Builder<non_const_lvalue, const_lvalue)
+        // func(Builder<const_lvalue, const_lvalue)
+        // func(Builder<non_const_rvalue, const_lvalue)
+        // func(Builder<const_lvalue, const_lvalue)
+        // func(Builder<non_const_lvalue, non_const_rvalue)
+        // ... etc, for all 4^2 = 16 input configurations
         template <typename FUNC>
         static void
         test(std::string_view test_name, FUNC &&function)
