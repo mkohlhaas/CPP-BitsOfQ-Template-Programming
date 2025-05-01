@@ -16,8 +16,9 @@ namespace bits_of_q
     inline std::ostream &
     operator<<(std::ostream &os, const CopyStats &stats)
     {
-        os << "{ default_constructs: " << stats.n_default_constructs << ", copies: " << stats.n_copies
-           << ", moves: " << stats.n_moves << " }";
+        os << "{ default_constructs: " << stats.n_default_constructs //
+           << ", copies: " << stats.n_copies                         //
+           << ", moves: " << stats.n_moves << " }";                  //
         return os;
     }
 

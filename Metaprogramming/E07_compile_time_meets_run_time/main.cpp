@@ -7,14 +7,14 @@ main()
     using namespace bits_of_q;
 
     auto tup = make_tuple(8, true, 1.5);
-    std::cout << get<2>(tup) << '\n';
+    std::cout << get<2>(tup) << '\n';            // 1.5
 
     const Tuple const_tup{1, false, 4};
-    std::cout << get<2>(const_tup) << '\n';
+    std::cout << get<2>(const_tup) << '\n';      // 4
 
-    std::cout << get<2>(Tuple{2, 3, 8}) << '\n';
+    std::cout << get<2>(Tuple{2, 3, 8}) << '\n'; // 8
     get<2>(tup) = 4.2;
-    std::cout << get<2>(tup) << '\n';
+    std::cout << get<2>(tup) << '\n';            // 4.2
 
     CopyCounter c;
     CopyCounter::reset();
@@ -40,8 +40,8 @@ main()
     get<1>(std_tup);
     std_stats = CopyCounter::stats;
 
-    std::cout << "bits_of_q::get: " << our_stats << '\n';
-    std::cout << "std::get:       " << std_stats << '\n';
+    std::cout << "bits_of_q::get:        " << our_stats << '\n';
+    std::cout << "std::get:              " << std_stats << '\n';
 
     assert(our_stats == std_stats);
 }

@@ -12,20 +12,23 @@ namespace bits_of_q
         constexpr Tuple() = default;
     };
 
+    // specialization for tuple with at least one element
     template <typename ELEM0, typename... ELEMS1toN>
     struct Tuple<ELEM0, ELEMS1toN...> : Tuple<ELEMS1toN...>
     {
+        ELEM0 data;
+
         template <typename T, typename... Ts>
-        explicit constexpr Tuple(T &&e1, Ts &&...rest)
-            : Tuple<ELEMS1toN...>(std::forward<Ts>(rest)...), data(std::forward<T>(e1))
+        explicit constexpr Tuple(T &&e0, Ts &&...rest)
+            : Tuple<ELEMS1toN...>(std::forward<Ts>(rest)...), data(std::forward<T>(e0))
         {
         }
-        ELEM0 data;
     };
 
     // deduction guide to make template argument deduction for constructors work (C++17)
     template <typename T, typename... Ts>
-    Tuple(T e1, Ts... rest) -> Tuple<std::unwrap_ref_decay_t<T>, std::unwrap_ref_decay_t<Ts>...>;
+    // Tuple(T, Ts...) -> Tuple<T, Ts...>;
+    Tuple(T, Ts...) -> Tuple<std::unwrap_ref_decay_t<T>, std::unwrap_ref_decay_t<Ts>...>;
 
     template <typename... ELEMS>
     constexpr auto
