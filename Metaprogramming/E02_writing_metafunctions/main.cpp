@@ -33,6 +33,11 @@ struct contains_type : if_< // IF
 {
 };
 
+template <typename SEARCH>
+struct contains_type<SEARCH, std::tuple<>, 0> : std::false_type
+{
+};
+
 bool
 contains(const std::string &search, const std::vector<std::string> &v, size_t start_from = 0)
 {
@@ -40,21 +45,28 @@ contains(const std::string &search, const std::vector<std::string> &v, size_t st
     {
         return true;
     }
+
     if (start_from == v.size() - 1)
-    { // we are at the last element
-        return false;
+    {
+        return false; // we are at the last element
     }
+
     return contains(search, v, start_from + 1);
 }
 
 int
 main()
 {
-    std::vector<std::string> vec{"int", "bool", "float"};
-    std::cout << std::boolalpha << contains("bool", vec) << '\n';
-    std::cout << std::boolalpha << contains("double", vec) << '\n';
+    std::cout << std::boolalpha;
 
-    std::tuple<int, bool, float> tuple;
-    std::cout << std::boolalpha << contains_type<bool, decltype(tuple)>::value << '\n';
-    std::cout << std::boolalpha << contains_type<double, decltype(tuple)>::value << '\n';
+    std::vector<std::string> vec{"int", "bool", "float"};
+    std::cout << contains("bool", vec) << '\n';                          // true
+    std::cout << contains("double", vec) << '\n';                        // false
+
+    std::tuple<int, bool, float> tuple1;
+    std::cout << contains_type<bool, decltype(tuple1)>::value << '\n';   // true
+    std::cout << contains_type<double, decltype(tuple1)>::value << '\n'; // false
+
+    std::tuple<> tuple2;
+    std::cout << contains_type<double, decltype(tuple2)>::value << '\n'; // false
 }

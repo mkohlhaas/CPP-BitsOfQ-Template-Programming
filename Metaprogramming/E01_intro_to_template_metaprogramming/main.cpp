@@ -47,8 +47,10 @@ print3(A a, B b, C c)
 {
     print1(a);
     std::cout << ", ";
+
     print1(b);
     std::cout << ", ";
+
     print1(c);
     std::cout << '\n';
 }
@@ -56,11 +58,14 @@ print3(A a, B b, C c)
 int
 main()
 {
-    print3(1, 2, 3);
-    std::string hello = "hello world";
-    print3(hello, 2, hello);
-    print3(&hello, 2, 3);
-    float  a = 10;
-    double b = 2;
-    print3(&hello, &a, &b);
+    using namespace std;
+
+    string hello = "hello world";
+    float  a     = 10;
+    double b     = 2;
+
+    print3(1, 2, 3);         // 1, 2, 3
+    print3(hello, 2, hello); // hello world, 2, hello world
+    print3(&hello, 2, 3);    // 0x7ffe558ff200, 2, 3
+    print3(&hello, &a, &b);  // 0x7ffe558ff200, 10, 2
 }
