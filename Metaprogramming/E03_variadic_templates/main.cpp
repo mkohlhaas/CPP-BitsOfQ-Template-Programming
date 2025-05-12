@@ -2,53 +2,51 @@
 #include <tuple>
 #include <type_traits>
 
-// Generic Print
+// printn
 
+template <typename T>
 void
-printn()
+printn(T &&t)
 {
-    std::cout << '\n';
+    std::cout << std::forward<T>(t) << '\n';
 }
 
-template <typename LAST>
+template <typename T, typename... Ts>
 void
-printn(LAST &&t)
+printn(T &&t, Ts &&...ts)
 {
-    std::cout << std::forward<LAST>(t) << '\n';
+    std::cout << std::forward<T>(t) << ", ";
+    printn(std::forward<Ts>(ts)...);
 }
 
-template <typename T0, typename... T1toN>
-void
-printn(T0 &&t, T1toN &&...rest)
-{
-    std::cout << std::forward<T0>(t) << ", ";
-    printn(std::forward<T1toN>(rest)...); // printn(std::forward<T1>(rest1), std::forward<T2>(rest2), ...)
-}
-
-// Tuple Print
+// print_tuple
 
 template <typename TUPLE, std::size_t... indices>
 void
 print_tuple_impl(TUPLE &&t, std::index_sequence<indices...>)
 {
-    printn(std::get<indices>(std::forward<TUPLE>(t))...); // printn(std::get<0>(t), std::get<1>(t), std::get<2>(t)...);
+    printn(std::get<indices>(std::forward<TUPLE>(t))...);
 }
 
 template <typename TUPLE>
 void
 print_tuple(TUPLE &&t)
 {
+    std::cerr << __PRETTY_FUNCTION__ << '\n';
+
     print_tuple_impl(std::forward<TUPLE>(t),
-                     std::make_index_sequence<std::tuple_size<std::remove_reference_t<TUPLE>>::value>{});
+                     std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<TUPLE>>>{});
 }
 
 int
 main()
 {
     std::cout << std::boolalpha;
+
     const auto tuple = std::make_tuple(9, "hello", 1.5, true);
-    print_tuple(tuple);            // 9, hello, 1.5, true
-    printn(9, "hello", 1.5, true); // 9, hello, 1.5, true
-    printn();                      //
-    printn("hello", "world");      // hello, world
+
+    print_tuple(std::make_tuple(9, "hello", 1.5, true)); // 9, hello, 1.5, true
+    print_tuple(tuple);                                  // 9, hello, 1.5, true
+    printn(9, "hello", 1.5, true);                       // 9, hello, 1.5, true
+    printn("hello", "world");                            // hello, world
 }
