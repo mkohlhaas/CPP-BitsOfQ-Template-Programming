@@ -26,8 +26,11 @@ struct if_<false, THEN, ELSE> : has_type<ELSE>
 {
 };
 
-static_assert(std::is_same_v<typename if_<(10 > 5), int, bool>::type, int>);
-static_assert(std::is_same_v<typename if_<(10 < 5), int, bool>::type, bool>);
+template <bool condition, typename THEN, typename ELSE>
+using if_t = if_<condition, THEN, ELSE>::type;
+
+static_assert(std::is_same_v<if_t<(10 > 5), int, bool>, int>);
+static_assert(std::is_same_v<if_t<10 < 5, int, bool>, bool>);
 
 // type_list ✓
 
@@ -52,15 +55,15 @@ template <typename LIST>
 inline constexpr bool empty_v = empty<LIST>::value;
 
 static_assert(empty_v<type_list<>>);
-static_assert(empty_v<type_list<int, bool>> == false);
+static_assert(not empty_v<type_list<int, bool>>);
 
 // front ✓
 
 template <typename LIST>
 struct front;
 
-template <template <typename...> typename LIST, typename T0, typename... T1toN>
-struct front<LIST<T0, T1toN...>> : has_type<T0>
+template <template <typename...> typename LIST, typename T, typename... Ts>
+struct front<LIST<T, Ts...>> : has_type<T>
 {
 };
 
@@ -74,8 +77,8 @@ static_assert(std::is_same_v<front_t<type_list<int, bool, float>>, int>);
 template <typename LIST>
 struct pop_front;
 
-template <template <typename...> typename LIST, typename T0, typename... T1toN>
-struct pop_front<LIST<T0, T1toN...>> : has_type<type_list<T1toN...>>
+template <template <typename...> typename LIST, typename T, typename... Ts>
+struct pop_front<LIST<T, Ts...>> : has_type<type_list<Ts...>>
 {
 };
 
@@ -91,8 +94,8 @@ struct back : has_type<typename back<pop_front_t<LIST>>::type>
 {
 };
 
-template <template <typename...> typename LIST, typename T0>
-struct back<LIST<T0>> : has_type<T0>
+template <template <typename...> typename LIST, typename T>
+struct back<LIST<T>> : has_type<T>
 {
 };
 
@@ -107,8 +110,8 @@ static_assert(std::is_same_v<back_t<type_list<int, bool>>, bool>);
 template <typename LIST, typename T>
 struct push_back;
 
-template <template <typename...> typename LIST, typename... T0toN, typename T>
-struct push_back<LIST<T0toN...>, T> : has_type<LIST<T0toN..., T>>
+template <template <typename...> typename LIST, typename... Ts, typename T>
+struct push_back<LIST<Ts...>, T> : has_type<LIST<Ts..., T>>
 {
 };
 
@@ -123,19 +126,25 @@ static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list
 template <typename LIST, typename RET_LIST = type_list<>>
 struct pop_back;
 
-template <template <typename...> typename LIST, typename T0, typename RET_LIST>
-struct pop_back<LIST<T0>, RET_LIST> : has_type<RET_LIST>
+template <template <typename...> typename LIST, typename RET_LIST>
+struct pop_back<LIST<>, RET_LIST> : has_type<RET_LIST>
 {
 };
 
-template <template <typename...> typename LIST, typename T0, typename T1, typename... T2toN, typename RET_LIST>
-struct pop_back<LIST<T0, T1, T2toN...>, RET_LIST> : pop_back<LIST<T1, T2toN...>, push_back_t<RET_LIST, T0>>
+template <template <typename...> typename LIST, typename T, typename RET_LIST>
+struct pop_back<LIST<T>, RET_LIST> : has_type<RET_LIST>
+{
+};
+
+template <template <typename...> typename LIST, typename T, typename... Ts, typename RET_LIST>
+struct pop_back<LIST<T, Ts...>, RET_LIST> : pop_back<LIST<Ts...>, push_back_t<RET_LIST, T>>
 {
 };
 
 template <typename LIST>
 using pop_back_t = typename pop_back<LIST>::type;
 
+static_assert(std::is_same_v<pop_back_t<type_list<>>, type_list<>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int>>, type_list<>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int, bool, float>>, type_list<int, bool>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int, bool>>, type_list<int>>);
@@ -155,28 +164,31 @@ struct at<LIST, 0> : has_type<front_t<LIST>>
 template <typename LIST, size_t index>
 using at_t = typename at<LIST, index>::type;
 
+static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 0>, int>);
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 1>, bool>);
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 2>, float>);
 
 // any
 
-// PREDICATE takes one type variable.
 template <template <typename> typename PREDICATE, typename LIST>
 struct any;
 
-// LIST takes variadic number of type variables. (LIST is now more specialized.)
 template <template <typename> typename PREDICATE, template <typename...> typename LIST>
 struct any<PREDICATE, LIST<>> : std::false_type
 {
 };
 
 template <template <typename> typename PREDICATE, typename LIST>
-struct any : if_< // if predicate matches first type
+using any_t = any<PREDICATE, LIST>::type;
+
+template <template <typename> typename PREDICATE, typename LIST>
+struct any : if_t<
+                 // IF
                  PREDICATE<front_t<LIST>>::value,
-                 // then
+                 // THEN
                  std::true_type,
-                 // else
-                 typename any<PREDICATE, pop_front_t<LIST>>::type>::type
+                 // ELSE
+                 any_t<PREDICATE, pop_front_t<LIST>>>
 {
 };
 
@@ -185,7 +197,7 @@ inline constexpr bool any_v = any<PREDICATE, LIST>::value;
 
 static_assert(any_v<std::is_integral, type_list<int, double, std::string>>);
 static_assert(any_v<std::is_integral, type_list<std::string, double, int>>);
-static_assert(!any_v<std::is_integral, type_list<std::string, double, float>>);
+static_assert(not any_v<std::is_integral, type_list<std::string, double, float>>);
 
 // contains_type
 
@@ -207,7 +219,7 @@ inline constexpr bool contains_type_v = any<same_as_pred<SEARCH>::template predi
 
 static_assert(contains_type_v<int, type_list<int, bool, float>>);
 static_assert(contains_type_v<float, type_list<int, bool, float>>);
-static_assert(contains_type_v<double, type_list<int, bool, float>> == false);
+static_assert(not contains_type_v<double, type_list<int, bool, float>>);
 
 // List2 ✓
 
@@ -221,27 +233,53 @@ struct LIST2
 int
 main()
 {
-    // type_lists work with front_t
-    type_list<int, float, bool> l;
-    static_assert(std::is_same_v<front_t<decltype(l)>, int>);
-
-    // tuples work with front_t
-    std::tuple<int, float, bool> t1;
-    front_t<decltype(t1)>        first1 = 42;
-
-    // List2 works with front_t
-    LIST2<int, bool, bool> l2;
-    front_t<decltype(l2)>  first2 = 42;
-
-    // contains_type_v works with all sorts of listy things
-    bool b1 = contains_type_v<bool, decltype(l)>;
-    bool b2 = contains_type_v<bool, decltype(t1)>;
-    bool b3 = contains_type_v<bool, decltype(l2)>;
-
     std::cout << std::boolalpha;
-    std::cout << first1 << '\n'; // 42
-    std::cout << first2 << '\n'; // 42
-    std::cout << b1 << '\n';     // true
-    std::cout << b2 << '\n';     // true
-    std::cout << b3 << '\n';     // true
+
+    // front_t, contains_type_v can be used with all sorts of "lists"
+
+    {
+        // 1. Type Lists
+
+        type_list<int, float, bool> l;
+
+        // front_t
+        static_assert(std::is_same_v<front_t<decltype(l)>, int>);
+
+        // contains_type_v
+        bool b = contains_type_v<bool, decltype(l)>;
+
+        std::cout << b << '\n'; // true
+    }
+
+    {
+        // 2. Tuples
+
+        std::tuple<int, float, bool> l;
+
+        // front_t
+        static_assert(std::is_same_v<front_t<decltype(l)>, int>);
+        front_t<decltype(l)> fst = 42;
+
+        // contains_type_v
+        bool b = contains_type_v<bool, decltype(l)>;
+
+        std::cout << fst << '\n'; // 42
+        std::cout << b << '\n';   // true
+    }
+
+    {
+        // 3. LIST2s
+
+        LIST2<int, bool, bool> l;
+
+        // front_t
+        static_assert(std::is_same_v<front_t<decltype(l)>, int>);
+        front_t<decltype(l)> fst = 42;
+
+        // contains_type_v
+        bool b = contains_type_v<bool, decltype(l)>;
+
+        std::cout << fst << '\n'; // 42
+        std::cout << b << '\n';   // true
+    }
 }
