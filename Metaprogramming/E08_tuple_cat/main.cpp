@@ -63,8 +63,7 @@ main()
         auto std_t1_2 = std::tuple_cat(std::forward<decltype(std_tuple1)>(std_tuple1),
                                        std::forward<decltype(std_tuple2)>(std_tuple2));
 
-        static_for<0, tuple_size_v<decltype(boq_t1_2)>>(
-            [&](auto i) { ASSERT(get<i.value>(boq_t1_2) == get<i.value>(std_t1_2)); });
+        static_for<0, tuple_size_v<decltype(boq_t1_2)>>([&](auto i) { ASSERT(get<i>(boq_t1_2) == get<i>(std_t1_2)); });
     });
 
     TesterWithBuilder<3>::test("tuple_cat", [](auto &&builder) {
@@ -84,7 +83,7 @@ main()
                                          std::forward<decltype(std_tuple3)>(std_tuple3));
 
         static_for<0, tuple_size_v<decltype(boq_t1_2_3)>>(
-            [&](auto i) { ASSERT(get<i.value>(boq_t1_2_3) == get<i.value>(std_t1_2_3)); });
+            [&](auto i) { ASSERT(get<i>(boq_t1_2_3) == get<i>(std_t1_2_3)); });
     });
 
     static_assert(tuple_size_v<Tuple<int, bool>> == 2);

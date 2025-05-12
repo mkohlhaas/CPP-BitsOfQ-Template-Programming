@@ -1,6 +1,8 @@
 #include <iostream>
 #include <type_traits>
 
+// is_pointer
+
 template <typename T>
 struct is_pointer
 {
@@ -12,6 +14,11 @@ struct is_pointer<T *>
 {
     static constexpr bool value = true;
 };
+
+template <typename T>
+inline constexpr bool is_pointer_v = is_pointer<T>::value;
+
+// strip_pointer
 
 template <typename T>
 struct strip_pointer
@@ -26,12 +33,17 @@ struct strip_pointer<T *>
 };
 
 template <typename T>
+using strip_pointer_t = strip_pointer<T>::type;
+
+// print
+
+template <typename T>
 void
 print1(T t)
 {
-    using T_without_pointer = typename strip_pointer<T>::type;
+    std::cerr << __PRETTY_FUNCTION__ << '\n';
 
-    if constexpr (is_pointer<T>::value && std::is_floating_point<T_without_pointer>::value)
+    if constexpr (is_pointer_v<T> && std::is_floating_point_v<strip_pointer_t<T>>)
     {
         std::cout << *t;
     }
