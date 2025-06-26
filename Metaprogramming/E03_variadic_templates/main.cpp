@@ -47,6 +47,7 @@ main()
 
     print_tuple(std::make_tuple(9, "hello", 1.5, true)); // 9, hello, 1.5, true
     print_tuple(tuple);                                  // 9, hello, 1.5, true
+
     printn(9, "hello", 1.5, true);                       // 9, hello, 1.5, true
     printn("hello", "world");                            // hello, world
 }
