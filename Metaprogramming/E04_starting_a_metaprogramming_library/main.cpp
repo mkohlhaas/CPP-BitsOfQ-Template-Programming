@@ -20,7 +20,7 @@ struct if_<false, THEN, ELSE>
 };
 
 template <bool condition, typename THEN, typename ELSE>
-using if_t = typename if_<condition, THEN, ELSE>::type;
+using if_t = if_<condition, THEN, ELSE>::type;
 
 // type_list ✓
 
@@ -42,7 +42,7 @@ struct empty<type_list<>> : std::true_type
 };
 
 template <typename TL>
-inline constexpr bool empty_v = empty<TL>::value;
+constexpr bool empty_v = empty<TL>::value;
 
 static_assert(empty_v<type_list<>>);          // empty
 static_assert(not empty_v<type_list<float>>); // not empty
@@ -59,7 +59,7 @@ struct front<type_list<T, Ts...>>
 };
 
 template <typename TL>
-using front_t = typename front<TL>::type; // ::type as type alias
+using front_t = front<TL>::type; // ::type as type alias
 
 static_assert(std::is_same_v<front_t<type_list<int, bool>>, int>);
 
@@ -84,13 +84,9 @@ static_assert(std::is_same_v<front_t<pop_front_t<pop_front_t<type_list<int, bool
 // contains_type ✓
 
 template <typename SEARCH, typename TL>
-struct contains_type : if_t<
-                           // IF
-                           std::is_same_v<SEARCH, front_t<TL>>,
-                           // THEN
-                           std::true_type,
-                           // ELSE
-                           contains_type<SEARCH, pop_front_t<TL>>>
+struct contains_type : if_t<std::is_same_v<SEARCH, front_t<TL>>,    // IF
+                            std::true_type,                         // THEN
+                            contains_type<SEARCH, pop_front_t<TL>>> // ELSE
 {
 };
 
@@ -101,7 +97,7 @@ struct contains_type<SEARCH, type_list<>> : std::false_type
 };
 
 template <typename SEARCH, typename TL>
-inline constexpr bool contains_type_v = contains_type<SEARCH, TL>::value;
+constexpr bool contains_type_v = contains_type<SEARCH, TL>::value;
 
 // contains ✓
 
@@ -129,12 +125,12 @@ main()
 
     using list_strings = std::list<std::string>;
     list_strings list{"int", "bool", "double"};
-    std::cout << contains("bool", list_strings{}) << '\n';        // false
-    std::cout << contains("bool", list) << '\n';                  // true
-    std::cout << contains("float", list) << '\n';                 // false
+    std::cout << contains("bool", list_strings{}) << std::endl;        // false
+    std::cout << contains("bool", list) << std::endl;                  // true
+    std::cout << contains("float", list) << std::endl;                 // false
 
     type_list<int, bool, double> types;
-    std::cout << contains_type_v<bool, type_list<>> << '\n';      // false
-    std::cout << contains_type_v<bool, decltype(types)> << '\n';  // true
-    std::cout << contains_type_v<float, decltype(types)> << '\n'; // false
+    std::cout << contains_type_v<bool, type_list<>> << std::endl;      // false
+    std::cout << contains_type_v<bool, decltype(types)> << std::endl;  // true
+    std::cout << contains_type_v<float, decltype(types)> << std::endl; // false
 }
