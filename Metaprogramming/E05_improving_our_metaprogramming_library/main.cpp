@@ -25,7 +25,7 @@ struct if_<false, THEN, ELSE> : has_type<ELSE>
 };
 
 template <bool condition, typename THEN, typename ELSE>
-using if_t = typename if_<condition, THEN, ELSE>::type;
+using if_t = if_<condition, THEN, ELSE>::type;
 
 static_assert(std::is_same_v<if_t<(10 > 5), int, bool>, int>);
 static_assert(std::is_same_v<if_t<(10 < 5), int, bool>, bool>);
@@ -66,7 +66,7 @@ struct front<type_list<T, Ts...>> : has_type<T>
 };
 
 template <typename TL>
-using front_t = typename front<TL>::type;
+using front_t = front<TL>::type;
 
 static_assert(std::is_same_v<front_t<type_list<int, bool, float>>, int>);
 
@@ -81,7 +81,7 @@ struct pop_front<type_list<T, Ts...>> : has_type<type_list<Ts...>>
 };
 
 template <typename TL>
-using pop_front_t = typename pop_front<TL>::type;
+using pop_front_t = pop_front<TL>::type;
 
 static_assert(std::is_same_v<pop_front_t<type_list<float>>, type_list<>>);
 static_assert(std::is_same_v<pop_front_t<type_list<int, bool, float>>, type_list<bool, float>>);
@@ -100,7 +100,7 @@ struct back<type_list<T>> : has_type<T>
 };
 
 template <typename TL>
-using back_t = typename back<TL>::type;
+using back_t = back<TL>::type;
 
 static_assert(std::is_same_v<back_t<type_list<int, bool, float>>, float>);
 static_assert(std::is_same_v<back_t<type_list<int, bool, bool>>, bool>);
@@ -116,7 +116,7 @@ struct push_back<type_list<Ts...>, T> : has_type<type_list<Ts..., T>>
 };
 
 template <typename TL, typename T>
-using push_back_t = typename push_back<TL, T>::type;
+using push_back_t = push_back<TL, T>::type;
 
 static_assert(std::is_same_v<push_back_t<type_list<>, int>, type_list<int>>);
 static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list<int, bool, float>>);
@@ -124,21 +124,21 @@ static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list
 // pop_back ✓
 
 // prerequisite: type_list is not empty
-template <typename TL, typename RET_TL = type_list<>>
+template <typename TL, typename ACC_TL = type_list<>>
 struct pop_back;
 
-template <typename T, typename RET_TL>
-struct pop_back<type_list<T>, RET_TL> : has_type<RET_TL>
+template <typename T, typename ACC_TL>
+struct pop_back<type_list<T>, ACC_TL> : has_type<ACC_TL>
 {
 };
 
-template <typename T, typename... Ts, typename RET_TL>
-struct pop_back<type_list<T, Ts...>, RET_TL> : pop_back<type_list<Ts...>, push_back_t<RET_TL, T>>
+template <typename T, typename... Ts, typename ACC_TL>
+struct pop_back<type_list<T, Ts...>, ACC_TL> : pop_back<type_list<Ts...>, push_back_t<ACC_TL, T>>
 {
 };
 
 template <typename TL>
-using pop_back_t = typename pop_back<TL>::type;
+using pop_back_t = pop_back<TL>::type;
 
 static_assert(std::is_same_v<pop_back_t<type_list<int>>, type_list<>>);
 static_assert(std::is_same_v<pop_back_t<type_list<int, bool, float>>, type_list<int, bool>>);
@@ -157,7 +157,7 @@ struct at<TL, 0> : has_type<front_t<TL>>
 };
 
 template <typename TL, std::size_t index>
-using at_t = typename at<TL, index>::type;
+using at_t = at<TL, index>::type;
 
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 0>, int>);
 static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 1>, bool>);
@@ -166,13 +166,9 @@ static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 2>, float>);
 // contains_type ✓
 
 template <typename SEARCH, typename TL>
-struct contains_type : if_t<
-                           // IF
-                           std::is_same_v<SEARCH, front_t<TL>>,
-                           // THEN
-                           std::true_type,
-                           // ELSE
-                           contains_type<SEARCH, pop_front_t<TL>>>
+struct contains_type : if_t<std::is_same_v<SEARCH, front_t<TL>>,    // IF
+                            std::true_type,                         // THEN
+                            contains_type<SEARCH, pop_front_t<TL>>> // ELSE
 {
 };
 
@@ -196,7 +192,8 @@ main()
     std::cout << std::boolalpha;
 
     type_list<int, bool, double> types;
-    std::cout << contains_type_v<bool, type_list<>> << '\n';      // false
-    std::cout << contains_type_v<bool, decltype(types)> << '\n';  // true
-    std::cout << contains_type_v<float, decltype(types)> << '\n'; // false
+
+    std::cout << contains_type_v<bool, type_list<>> << std::endl;      // false
+    std::cout << contains_type_v<bool, decltype(types)> << std::endl;  // true
+    std::cout << contains_type_v<float, decltype(types)> << std::endl; // false
 }
