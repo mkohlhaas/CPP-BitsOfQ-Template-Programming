@@ -8,7 +8,7 @@ template <typename T>
 void
 printn(T &&t)
 {
-    std::cout << std::forward<T>(t) << '\n';
+    std::cout << std::forward<T>(t) << std::endl;
 }
 
 template <typename T, typename... Ts>
@@ -32,7 +32,7 @@ template <typename TUPLE>
 void
 print_tuple(TUPLE &&t)
 {
-    std::cerr << __PRETTY_FUNCTION__ << '\n';
+    std::cerr << __PRETTY_FUNCTION__ << std::endl;
 
     print_tuple_impl(std::forward<TUPLE>(t),
                      std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<TUPLE>>>{});
