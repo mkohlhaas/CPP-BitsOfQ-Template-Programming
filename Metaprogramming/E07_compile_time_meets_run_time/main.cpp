@@ -29,8 +29,8 @@ main()
         std::make_tuple(8, c, 1.5);
         CopyStats std_stats = c.stats;
 
-        std::cout << "bits_of_q::make_tuple: " << our_stats << std::endl;
-        std::cout << "std::make_tuple:       " << std_stats << std::endl;
+        std::cout << "bits_of_q::make_tuple: " << our_stats << std::endl; // { default_constructs: 0, copies: 1, moves: 0 }
+        std::cout << "std::make_tuple:       " << std_stats << std::endl; // { default_constructs: 0, copies: 1, moves: 0 }
 
         assert(our_stats == std_stats);
     }
@@ -50,8 +50,8 @@ main()
         get<1>(std_tup);
         CopyStats std_stats = CopyCounter::stats;
 
-        std::cout << "bits_of_q::get:        " << our_stats << std::endl;
-        std::cout << "std::get:              " << std_stats << std::endl;
+        std::cout << "bits_of_q::get:        " << our_stats << std::endl; // { default_constructs: 0, copies: 0, moves: 0 }
+        std::cout << "std::get:              " << std_stats << std::endl; // { default_constructs: 0, copies: 0, moves: 0 }
 
         assert(our_stats == std_stats);
     }
