@@ -125,14 +125,15 @@ namespace bits_of_q
     static_assert(std::is_same_v<push_back_t<type_list<>, int>, type_list<int>>);
     static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list<int, bool, float>>);
 
-    // make_same_container
+    // make_same_container ✓
+
+    // transform from one list type to another list type, e.g. from type_list to LIST2
 
     template <typename FROM_LIST, typename TO_LIST>
     struct make_same_container;
 
-    template <template <typename...> class LIST, typename... ELEMS, template <typename...> class TO_LIST,
-              typename... ELEMS2>
-    struct make_same_container<LIST<ELEMS...>, TO_LIST<ELEMS2...>> : has_type<TO_LIST<ELEMS...>>
+    template <template <typename...> class LIST, typename... ELEMS1, template <typename...> class TO_LIST, typename... ELEMS2>
+    struct make_same_container<LIST<ELEMS1...>, TO_LIST<ELEMS2...>> : has_type<TO_LIST<ELEMS1...>>
     {
     };
 
@@ -141,16 +142,16 @@ namespace bits_of_q
 
     // pop_back ✓
 
-    template <typename LIST, typename RET_LIST = make_same_container_t<type_list<>, LIST>>
+    template <typename LIST, typename ACC_LIST = make_same_container_t<type_list<>, LIST>>
     struct pop_back;
 
-    template <template <typename...> class LIST, typename T0, typename RET_LIST>
-    struct pop_back<LIST<T0>, RET_LIST> : has_type<RET_LIST>
+    template <template <typename...> class LIST, typename T0, typename ACC_LIST>
+    struct pop_back<LIST<T0>, ACC_LIST> : has_type<ACC_LIST>
     {
     };
 
-    template <template <typename...> class LIST, typename T0, typename T1, typename... T2toN, typename RET_LIST>
-    struct pop_back<LIST<T0, T1, T2toN...>, RET_LIST> : pop_back<LIST<T1, T2toN...>, push_back_t<RET_LIST, T0>>
+    template <template <typename...> class LIST, typename T0, typename T1, typename... T2toN, typename ACC_LIST>
+    struct pop_back<LIST<T0, T1, T2toN...>, ACC_LIST> : pop_back<LIST<T1, T2toN...>, push_back_t<ACC_LIST, T0>>
     {
     };
 
@@ -194,12 +195,9 @@ namespace bits_of_q
     };
 
     template <template <typename> class PREDICATE, typename LIST>
-    struct any : if_t< // if predicate matches first type
-                     PREDICATE<front_t<LIST>>::value,
-                     // then
-                     std::true_type,
-                     // else
-                     any_t<PREDICATE, pop_front_t<LIST>>>
+    struct any : if_t<PREDICATE<front_t<LIST>>::value,     // IF
+                      std::true_type,                      // THEN
+                      any_t<PREDICATE, pop_front_t<LIST>>> // ELSE
     {
     };
 

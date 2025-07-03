@@ -13,6 +13,7 @@ namespace bits_of_q
         bool operator==(const CopyStats &other) const = default;
     };
 
+    // print CopyStats
     inline std::ostream &
     operator<<(std::ostream &os, const CopyStats &stats)
     {
@@ -31,11 +32,13 @@ namespace bits_of_q
             stats.n_default_constructs++;
         }
 
+        // copy constructor
         CopyCounter(const CopyCounter &)
         {
             stats.n_copies++;
         }
 
+        // copy assignment
         CopyCounter &
         operator=(const CopyCounter &)
         {
@@ -43,11 +46,13 @@ namespace bits_of_q
             return *this;
         }
 
+        // move constructor
         CopyCounter(CopyCounter &&) noexcept
         {
             stats.n_moves++;
         };
 
+        // move assignment
         CopyCounter &
         operator=(CopyCounter &&) noexcept
         {
@@ -55,6 +60,7 @@ namespace bits_of_q
             return *this;
         }
 
+        // reset statistics and return old statistics
         static CopyStats
         reset()
         {
