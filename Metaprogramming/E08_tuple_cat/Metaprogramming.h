@@ -14,7 +14,7 @@ namespace bits_of_q
         using type = T;
     };
 
-    // if_
+    // if_ ✓
 
     template <bool condition, typename THEN, typename ELSE>
     struct if_;
@@ -32,14 +32,14 @@ namespace bits_of_q
     static_assert(std::is_same_v<typename if_<(10 > 5), int, bool>::type, int>);
     static_assert(std::is_same_v<typename if_<(10 < 5), int, bool>::type, bool>);
 
-    // type_list
+    // type_list ✓
 
     template <typename...>
     struct type_list
     {
     };
 
-    // empty
+    // empty ✓
 
     template <typename LIST>
     struct empty : std::false_type
@@ -57,7 +57,7 @@ namespace bits_of_q
     static_assert(empty_v<type_list<>>);
     static_assert(empty_v<type_list<int, bool>> == false);
 
-    // front
+    // front ✓
 
     template <typename LIST>
     struct front;
@@ -72,7 +72,7 @@ namespace bits_of_q
 
     static_assert(std::is_same_v<front_t<type_list<int, bool, float>>, int>);
 
-    // pop_front
+    // pop_front ✓
 
     template <typename LIST>
     struct pop_front;
@@ -87,7 +87,7 @@ namespace bits_of_q
 
     static_assert(std::is_same_v<pop_front_t<type_list<int, bool, float>>, type_list<bool, float>>);
 
-    // back
+    // back ✓
 
     template <typename LIST>
     struct back : has_type<typename back<pop_front_t<LIST>>::type>
@@ -105,7 +105,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<back_t<type_list<int, bool, float>>, float>);
     static_assert(std::is_same_v<back_t<type_list<int, bool>>, bool>);
 
-    // push_back
+    // push_back ✓
 
     template <typename LIST, typename T>
     struct push_back;
@@ -121,13 +121,12 @@ namespace bits_of_q
     static_assert(std::is_same_v<push_back_t<type_list<>, int>, type_list<int>>);
     static_assert(std::is_same_v<push_back_t<type_list<int, bool>, float>, type_list<int, bool, float>>);
 
-    // make_same_container
+    // make_same_container ✓
 
     template <typename FROM_LIST, typename TO_LIST>
     struct make_same_container;
 
-    template <template <typename...> class LIST, typename... ELEMS, template <typename...> class TO_LIST,
-              typename... ELEMS2>
+    template <template <typename...> class LIST, typename... ELEMS, template <typename...> class TO_LIST, typename... ELEMS2>
     struct make_same_container<LIST<ELEMS...>, TO_LIST<ELEMS2...>> : has_type<TO_LIST<ELEMS...>>
     {
     };
@@ -135,7 +134,7 @@ namespace bits_of_q
     template <typename FROM_LIST, typename TO_LIST>
     using make_same_container_t = typename make_same_container<FROM_LIST, TO_LIST>::type;
 
-    // pop_back
+    // pop_back ✓
 
     template <typename LIST, typename RET_LIST = make_same_container_t<type_list<>, LIST>>
     struct pop_back;
@@ -158,7 +157,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<pop_back_t<type_list<int, bool>>, type_list<int>>);
     static_assert(std::is_same_v<pop_back_t<std::tuple<int, bool>>, std::tuple<int>>);
 
-    // at
+    // at ✓
 
     template <typename LIST, size_t index>
     struct at : has_type<typename at<pop_front_t<LIST>, index - 1>::type>
@@ -176,7 +175,7 @@ namespace bits_of_q
     static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 1>, bool>);
     static_assert(std::is_same_v<at_t<type_list<int, bool, float>, 2>, float>);
 
-    // any
+    // any ✓
 
     template <template <typename> class PREDICATE, typename LIST>
     struct any;
@@ -203,7 +202,7 @@ namespace bits_of_q
     static_assert(any_v<std::is_integral, type_list<std::string, double, int>>);
     static_assert(!any_v<std::is_integral, type_list<std::string, double, float>>);
 
-    // contains_type
+    // contains_type ✓
 
     template <typename T>
     struct same_as_pred
@@ -221,7 +220,7 @@ namespace bits_of_q
     static_assert(contains_type_v<float, type_list<int, bool, float>>);
     static_assert(contains_type_v<double, type_list<int, bool, float>> == false);
 
-    // static_for
+    // static_for ✓
 
     // LAMBDA/f takes an intregral_constant
     template <int FIRST, int LAST, typename LAMBDA>
@@ -230,7 +229,7 @@ namespace bits_of_q
     {
         if constexpr (FIRST < LAST)
         {
-            f(std::integral_constant<int, FIRST>{});
+            f(std::integral_constant<int, FIRST>());
             static_for<FIRST + 1, LAST>(f);
         }
     }

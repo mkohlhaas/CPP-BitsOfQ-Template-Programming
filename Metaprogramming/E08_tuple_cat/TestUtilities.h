@@ -12,6 +12,7 @@
 
 namespace bits_of_q
 {
+    // copy, move statistics
     struct CopyStats
     {
         int n_default_constructs = 0;
@@ -21,6 +22,7 @@ namespace bits_of_q
         bool operator==(const CopyStats &other) const = default;
     };
 
+    // print statistics
     inline std::ostream &
     operator<<(std::ostream &os, const CopyStats &stats)
     {
@@ -30,32 +32,40 @@ namespace bits_of_q
         return os;
     }
 
+    // index will be used to initialize separate CopyCounters (see usage of make_copy_counter in main.cpp)
     template <size_t i>
     struct IndexedCopyCounter
     {
+        inline static CopyStats stats;
+
+        // just for tagging
+        // Acts like an automatic reset - we don't have to call reset() explicitly after creating an IndexedCopyCounter.
         struct reset_after_construct_t
         {
         };
 
+        // create a static instance of reset_after_construct_t
         static constexpr reset_after_construct_t reset_after_construct{};
 
-        inline static CopyStats stats;
-
+        // overloaded constructor for automatic calling reset()
         explicit IndexedCopyCounter(reset_after_construct_t)
         {
             reset();
         }
 
+        // constructor
         IndexedCopyCounter()
         {
             stats.n_default_constructs++;
         }
 
+        // copy constructor
         IndexedCopyCounter(const IndexedCopyCounter &)
         {
             stats.n_copies++;
         }
 
+        // copy assignment
         IndexedCopyCounter &
         operator=(const IndexedCopyCounter &)
         {
@@ -63,11 +73,13 @@ namespace bits_of_q
             return *this;
         }
 
+        // move constructor
         IndexedCopyCounter(IndexedCopyCounter &&) noexcept
         {
             stats.n_moves++;
         };
 
+        // move assignment
         IndexedCopyCounter &
         operator=(IndexedCopyCounter &&) noexcept
         {
@@ -75,6 +87,7 @@ namespace bits_of_q
             return *this;
         }
 
+        // reset statistics and return old statistics
         static CopyStats
         reset()
         {
@@ -85,9 +98,10 @@ namespace bits_of_q
             return old_stats;
         }
 
-        template <size_t i2>
+        // comparison operator (compare different IndexedCopyCounters - i != n)
+        template <size_t n>
         bool
-        operator==(const IndexedCopyCounter<i2> &other) const
+        operator==(const IndexedCopyCounter<n> &other) const
         {
             return stats == other.stats;
         }
@@ -99,8 +113,11 @@ namespace bits_of_q
                                                                      // create an IndexedCopyCounter with the same index
     } // namespace detail
 
+    // our old CopyCounter (just with some predefined but random index)
     using CopyCounter = IndexedCopyCounter<detail::default_copycounter_index>;
 
+    // creates by default our old CopyCounter
+    // Automatically calls reset().
     template <size_t index = detail::default_copycounter_index>
     IndexedCopyCounter<index>
     make_copy_counter()
@@ -113,11 +130,12 @@ namespace bits_of_q
 // For any serious project, please use a well-established testing framework such as GoogleTest or Catch.
 namespace bits_of_q::testing
 {
-    // assert
-
+    // assert (throw/exception object)
     struct AssertFailed : std::runtime_error
     {
-        explicit AssertFailed(std::string_view file_path, size_t line, std::string_view assert_expression)
+        explicit AssertFailed(std::string_view file_path,         //
+                              size_t           line,              //
+                              std::string_view assert_expression) //
             : std::runtime_error("assert failed"), file(file_path), line_nr(line), expression(assert_expression)
         {
         }
@@ -127,26 +145,24 @@ namespace bits_of_q::testing
         std::string_view expression;
     };
 
-#define ASSERT(expr)                                                                                                   \
-    if (!(expr))                                                                                                       \
-    {                                                                                                                  \
-        throw ::bits_of_q::testing::AssertFailed{__FILE__, __LINE__, #expr};                                           \
+#define ASSERT(expr)                                                                                                             \
+    if (!(expr))                                                                                                                 \
+    {                                                                                                                            \
+        throw ::bits_of_q::testing::AssertFailed{__FILE__, __LINE__, #expr};                                                     \
     }
 
-    // simple tester
-
+    // simple tester class
     class Tester
     {
-        // Unix terminal color codes
-        // Use fmt::format's color manipulation or if your compiler already supports it std::format for an easy
-        // cross-platform alternative.
+        // Unix terminal color codes.
+        // Use fmt::format's color manipulation or if compiler supports it std::format for an easy cross-platform alternative.
         static constexpr std::string_view color_reset = "\033[0m";
         static constexpr std::string_view color_red   = "\033[31m";
         static constexpr std::string_view color_green = "\033[32m";
 
       public:
-        // Executes the function outputting a banner at the start and end as well as printing information on exceptions
-        // thrown by the function.
+        // Executes the function FUNC outputting a banner at the start and end
+        // as well as printing information on exceptions thrown by the function.
         template <typename FUNC>
         static void
         test(std::string_view test_name, FUNC &&function)
@@ -156,7 +172,7 @@ namespace bits_of_q::testing
 
             try
             {
-                function();
+                function(); // FUNC has no params
             }
             catch (...)
             {
@@ -192,7 +208,7 @@ namespace bits_of_q::testing
         {
             try
             {
-                throw;
+                throw; // rethrow exception
             }
             catch (const AssertFailed &e)
             {
@@ -214,23 +230,27 @@ namespace bits_of_q::testing
 
     enum class Configuration
     {
-        non_const_lvalue,
-        const_lvalue,
-        non_const_rvalue,
-        const_rvalue,
-        MAX_CONF
+        NON_CONST_LVALUE,
+        CONST_LVALUE,
+        NON_CONST_RVALUE,
+        CONST_RVALUE,
+        MAX_CONFIGURATION
     };
 
-    inline constexpr std::size_t num_configs = static_cast<int>(Configuration::MAX_CONF);
+    // number of configs
+    inline constexpr std::size_t num_configs = static_cast<int>(Configuration::MAX_CONFIGURATION);
 
+    // map enum config to string
     static constexpr std::array<std::string_view, num_configs> g_config_string = {"&", "const &", "&&", "const &&"};
 
+    // convert enum config to string
     constexpr std::string_view
     config_to_string(Configuration c)
     {
         return g_config_string[static_cast<size_t>(c)];
     }
 
+    // Builder declaration
     template <Configuration... configs>
     class Builder;
 
@@ -238,18 +258,18 @@ namespace bits_of_q::testing
     class TesterWithBuilder
     {
       public:
-        // Executes functions with a builder for different configurations(see above) as input.
+        // Executes functions with a builder for different configurations (see above) as input.
         // Example:
         // if n_args == 2, the test function will execute the input function 4*4=16 times with the following builders
-        // func(Builder<non_const_lvalue, non_const_lvalue)
-        // func(Builder<const_lvalue, non_const_lvalue)
-        // func(Builder<non_const_rvalue, non_const_lvalue)
-        // func(Builder<const_rvalue, non_const_lvalue)
-        // func(Builder<non_const_lvalue, const_lvalue)
-        // func(Builder<const_lvalue, const_lvalue)
-        // func(Builder<non_const_rvalue, const_lvalue)
-        // func(Builder<const_lvalue, const_lvalue)
-        // func(Builder<non_const_lvalue, non_const_rvalue)
+        // func(Builder<NON_CONST_LVALUE, NON_CONST_LVALUE) // 0 = 0 + 0
+        // func(Builder<CONST_LVALUE, NON_CONST_LVALUE)     // 1 = 1 + 0
+        // func(Builder<NON_CONST_RVALUE, NON_CONST_LVALUE) // 2 = 2 + 0
+        // func(Builder<CONST_RVALUE, NON_CONST_LVALUE)     // 3 = 3 + 0
+        // func(Builder<NON_CONST_LVALUE, CONST_LVALUE)     // 4 = 0 + 1
+        // func(Builder<CONST_LVALUE, CONST_LVALUE)         // 5 = 1 + 1
+        // func(Builder<NON_CONST_RVALUE, CONST_LVALUE)     // 6 = 2 + 1
+        // func(Builder<CONST_LVALUE, CONST_LVALUE)         // 7 = 3 + 1
+        // func(Builder<NON_CONST_LVALUE, NON_CONST_RVALUE) // 8 = 0 + 2
         // ... etc, for all 4^2 = 16 input configurations
         //
         // FUNC/function takes a builder
@@ -265,6 +285,7 @@ namespace bits_of_q::testing
                 static_for<0, n_configurations>([&](auto i) {
                     try
                     {
+                        // i is an integral_constant (see definition of static_for)
                         execute_for_config<i.value>(std::make_index_sequence<n_args>{}, function);
                     }
                     catch (...)
@@ -288,6 +309,7 @@ namespace bits_of_q::testing
         static constexpr T
         constexpr_pow(T num, unsigned int pow)
         {
+            // if pow too big result will be 0 -> no functions generated
             return (pow >= sizeof(unsigned int) * 8) ? 0 : pow == 0 ? 1 : num * constexpr_pow(num, pow - 1);
         }
 
@@ -320,8 +342,9 @@ namespace bits_of_q::testing
             catch (const AssertFailed &e)
             {
                 std::cerr << "Exception was thrown at " << e.file << ":" << e.line_nr << " :\n";
-                std::cerr << "ASSERT( " << e.expression << " ) evaluated to false with config: "
-                          << get_config_str<config>(std::make_index_sequence<n_args>{}) << '\n';
+                std::cerr << "ASSERT( " << e.expression
+                          << " ) evaluated to false with config: " << get_config_str<config>(std::make_index_sequence<n_args>{})
+                          << '\n';
             }
             catch (const std::exception &e)
             {
@@ -341,6 +364,7 @@ namespace bits_of_q::testing
         }
     };
 
+    // Builder definition
     // Builder takes a list of configs (all permutations of possible configs)
     template <Configuration... configs>
     class Builder
@@ -372,9 +396,7 @@ namespace bits_of_q::testing
         decltype(auto)
         store_and_cast(T &&t)
         {
-            auto *copy = new std::remove_cvref_t<T>{std::forward<T>(t)};
-            // cvref has already been removed
-            // void (*destructor)(void *) = [](void *ptr) { delete static_cast<std::remove_cvref_t<T> *>(ptr); };
+            auto *copy                 = new std::remove_cvref_t<T>{std::forward<T>(t)};
             void (*destructor)(void *) = [](void *ptr) { delete static_cast<T *>(ptr); };
             m_values.emplace_back(copy, destructor);
             return cast_value<config>(*copy);
@@ -384,19 +406,19 @@ namespace bits_of_q::testing
         decltype(auto)
         cast_value(T &value)
         {
-            if constexpr (config == Configuration::non_const_lvalue)
+            if constexpr (config == Configuration::NON_CONST_LVALUE)
             {
                 return static_cast<std::remove_cv_t<T> &>(value);
             }
-            if constexpr (config == Configuration::const_lvalue)
+            else if constexpr (config == Configuration::CONST_LVALUE)
             {
                 return static_cast<const std::remove_cv_t<T> &>(value);
             }
-            if constexpr (config == Configuration::non_const_rvalue)
+            else if constexpr (config == Configuration::NON_CONST_RVALUE)
             {
                 return static_cast<std::remove_cv_t<T> &&>(value);
             }
-            if constexpr (config == Configuration::const_rvalue)
+            else if constexpr (config == Configuration::CONST_RVALUE)
             {
                 return static_cast<const std::remove_cv_t<T> &&>(value);
             }

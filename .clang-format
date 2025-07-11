@@ -1,6 +1,6 @@
 BasedOnStyle: Microsoft
 Language: Cpp
-ColumnLimit: 130
+ColumnLimit: 140
 AlignConsecutiveAssignments: Consecutive
 AlignConsecutiveDeclarations: Consecutive
 AlignConsecutiveMacros: Consecutive
