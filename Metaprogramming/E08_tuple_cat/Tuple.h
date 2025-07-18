@@ -1,9 +1,5 @@
 #pragma once
 
-#include <functional>
-#include <type_traits>
-#include <utility>
-
 #include "Metaprogramming.h"
 
 namespace bits_of_q
@@ -14,7 +10,6 @@ namespace bits_of_q
     template <typename...>
     struct Tuple
     {
-        constexpr Tuple() = default;
     };
 
     // tuple with at least one element ✓
@@ -37,7 +32,7 @@ namespace bits_of_q
 
     // helper: make_tuple ✓
     template <typename... ELEMS>
-    constexpr auto
+    auto
     make_tuple(ELEMS &&...elems)
     {
         return Tuple<std::unwrap_ref_decay_t<ELEMS>...>{std::forward<ELEMS>(elems)...};
@@ -58,7 +53,7 @@ namespace bits_of_q
         struct get_impl<0, TUPLE>
         {
             template <typename T>
-            constexpr static decltype(auto)
+            static decltype(auto)
             get(T &&t)
             {
                 constexpr bool T_is_lvalue_ref = std::is_lvalue_reference_v<T>;
@@ -106,7 +101,7 @@ namespace bits_of_q
     // forward as tuple (create a tuple from forwarding refs)
 
     template <typename... Ts>
-    constexpr auto
+    auto
     forward_as_tuple(Ts &&...ts) noexcept
     {
         return Tuple<Ts &&...>{std::forward<Ts>(ts)...};
@@ -124,7 +119,7 @@ namespace bits_of_q
         struct make_tuple_from_fwd_tuple<std::index_sequence<indices...>>
         {
             template <typename FWD_TUPLE>
-            static constexpr auto
+            static auto
             f(FWD_TUPLE &&fwd)
             {
                 return Tuple{get<indices>(std::forward<FWD_TUPLE>(fwd))...};
@@ -140,11 +135,10 @@ namespace bits_of_q
         struct concat_with_fwd_tuple<std::index_sequence<fwd_indices...>, std::index_sequence<indices...>>
         {
             template <typename FWD_TUPLE, typename TUPLE>
-            static constexpr auto
+            static auto
             f(FWD_TUPLE &&fwd, TUPLE &&t)
             {
-                return forward_as_tuple(get<fwd_indices>(std::forward<FWD_TUPLE>(fwd))...,
-                                        get<indices>(std::forward<TUPLE>(t))...);
+                return forward_as_tuple(get<fwd_indices>(std::forward<FWD_TUPLE>(fwd))..., get<indices>(std::forward<TUPLE>(t))...);
             }
         };
 
@@ -153,7 +147,7 @@ namespace bits_of_q
         struct tuple_cat_impl
         {
             template <typename FWD_TUPLE, typename TUPLE, typename... TUPLES>
-            static constexpr auto
+            static auto
             f(FWD_TUPLE &&fwd, TUPLE &&t, TUPLES &&...ts)
             {
                 return f(concat_with_fwd_tuple<
@@ -164,11 +158,10 @@ namespace bits_of_q
             }
 
             template <typename FWD_TUPLE>
-            static constexpr auto
+            static auto
             f(FWD_TUPLE &&ret)
             {
-                return make_tuple_from_fwd_tuple<std::make_index_sequence<tuple_size_v<FWD_TUPLE>>>::f(
-                    std::forward<FWD_TUPLE>(ret));
+                return make_tuple_from_fwd_tuple<std::make_index_sequence<tuple_size_v<FWD_TUPLE>>>::f(std::forward<FWD_TUPLE>(ret));
             }
         };
 
@@ -179,7 +172,7 @@ namespace bits_of_q
     // get
 
     template <size_t i, typename TUPLE>
-    constexpr decltype(auto)
+    decltype(auto)
     get(TUPLE &&tuple)
     {
         // get(...) is by definition the value at searched index
@@ -189,7 +182,7 @@ namespace bits_of_q
     // tuple cat
 
     template <typename... TUPLES>
-    constexpr auto
+    auto
     tuple_cat(TUPLES &&...tuples)
     {
         return detail::tuple_cat_impl::f(std::forward<TUPLES>(tuples)...);
