@@ -27,8 +27,8 @@ namespace bits_of_q
 
     // deduction guide to make template argument deduction for constructors work (C++17)
     // deduction guide: mapping from function (in this case constructor) -> type
-    template <typename T, typename... Ts>
-    Tuple(T e1, Ts... rest) -> Tuple<std::unwrap_ref_decay_t<T>, std::unwrap_ref_decay_t<Ts>...>;
+    template <typename... Ts>
+    Tuple(Ts...) -> Tuple<std::unwrap_ref_decay_t<Ts>...>;
 
     // helper: make_tuple ✓
     template <typename... ELEMS>
@@ -64,7 +64,7 @@ namespace bits_of_q
                 if constexpr (T_is_const && T_is_lvalue_ref)
                 {
                     // const &
-                    return static_cast<const data_t &>(static_cast<const TUPLE &>(t).data);
+                    return static_cast<const data_t &>(static_cast<const TUPLE &>(t).data); // cast t, take data, cast data
                 }
                 if constexpr (!T_is_const && T_is_lvalue_ref)
                 {
@@ -131,14 +131,15 @@ namespace bits_of_q
         template <typename FWD_INDEX_SEQ, typename TUPLE_INDEX_SEQ>
         struct concat_with_fwd_tuple;
 
-        template <size_t... fwd_indices, size_t... indices>
-        struct concat_with_fwd_tuple<std::index_sequence<fwd_indices...>, std::index_sequence<indices...>>
+        template <size_t... fwd_indices, size_t... nrm_indices>
+        struct concat_with_fwd_tuple<std::index_sequence<fwd_indices...>, std::index_sequence<nrm_indices...>>
         {
-            template <typename FWD_TUPLE, typename TUPLE>
+            template <typename FWD_TUPLE, typename NRM_TUPLE>
             static auto
-            f(FWD_TUPLE &&fwd, TUPLE &&t)
+            f(FWD_TUPLE &&fwd, NRM_TUPLE &&t)
             {
-                return forward_as_tuple(get<fwd_indices>(std::forward<FWD_TUPLE>(fwd))..., get<indices>(std::forward<TUPLE>(t))...);
+                return forward_as_tuple(get<fwd_indices>(std::forward<FWD_TUPLE>(fwd))..., //
+                                        get<nrm_indices>(std::forward<NRM_TUPLE>(t))...);
             }
         };
 
@@ -146,14 +147,14 @@ namespace bits_of_q
 
         struct tuple_cat_impl
         {
-            template <typename FWD_TUPLE, typename TUPLE, typename... TUPLES>
+            template <typename FWD_TUPLE, typename NRM_TUPLE, typename... TUPLES>
             static auto
-            f(FWD_TUPLE &&fwd, TUPLE &&t, TUPLES &&...ts)
+            f(FWD_TUPLE &&fwd, NRM_TUPLE &&t, TUPLES &&...ts)
             {
                 return f(concat_with_fwd_tuple<
                              std::make_index_sequence<tuple_size_v<std::remove_cvref_t<FWD_TUPLE>>>,
-                             std::make_index_sequence<tuple_size_v<std::remove_cvref_t<TUPLE>>>>::f(std::forward<FWD_TUPLE>(fwd),
-                                                                                                    std::forward<TUPLE>(t)),
+                             std::make_index_sequence<tuple_size_v<std::remove_cvref_t<NRM_TUPLE>>>>::f(std::forward<FWD_TUPLE>(fwd),
+                                                                                                        std::forward<NRM_TUPLE>(t)),
                          std::forward<TUPLES>(ts)...);
             }
 
@@ -175,7 +176,6 @@ namespace bits_of_q
     decltype(auto)
     get(TUPLE &&tuple)
     {
-        // get(...) is by definition the value at searched index
         return detail::get_impl<i, std::remove_cvref_t<TUPLE>>::get(std::forward<TUPLE>(tuple));
     }
 
