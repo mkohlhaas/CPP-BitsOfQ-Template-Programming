@@ -7,12 +7,11 @@
 #include <iostream>
 #include <memory>
 #include <type_traits>
-#include <utility>
 #include <vector>
 
 namespace bits_of_q
 {
-    // copy, move statistics
+    // copy, move statistics ✓
     struct CopyStats
     {
         int n_default_constructs = 0;
@@ -22,7 +21,7 @@ namespace bits_of_q
         bool operator==(const CopyStats &other) const = default;
     };
 
-    // print statistics
+    // print statistics ✓
     inline std::ostream &
     operator<<(std::ostream &os, const CopyStats &stats)
     {
@@ -32,10 +31,11 @@ namespace bits_of_q
         return os;
     }
 
-    // index will be used to initialize separate CopyCounters (see usage of make_copy_counter in main.cpp)
+    // index will be used to initialize separate CopyCounters (see usage of make_copy_counter in main.cpp) ✓
     template <size_t i>
     struct IndexedCopyCounter
     {
+        // NOTE: must be inline (cause by build system ?)
         inline static CopyStats stats;
 
         // just for tagging
@@ -44,10 +44,10 @@ namespace bits_of_q
         {
         };
 
-        // create a static instance of reset_after_construct_t
+        // create a static instance - called reset_after_construct - of reset_after_construct_t at compile time
         static constexpr reset_after_construct_t reset_after_construct{};
 
-        // overloaded constructor for automatic calling reset()
+        // overloaded constructor for automatically calling reset()
         explicit IndexedCopyCounter(reset_after_construct_t)
         {
             reset();
@@ -98,7 +98,7 @@ namespace bits_of_q
             return old_stats;
         }
 
-        // comparison operator (compare different IndexedCopyCounters - i != n)
+        // comparison operator (compare underlying CopyStats)
         template <size_t n>
         bool
         operator==(const IndexedCopyCounter<n> &other) const
@@ -107,17 +107,17 @@ namespace bits_of_q
         }
     };
 
-    namespace detail
+    namespace detail // ✓
     {
-        static constexpr size_t default_copycounter_index = 2734987; // just some random number so you don't easily
-                                                                     // create an IndexedCopyCounter with the same index
+        // just some random number so you don't easily create an IndexedCopyCounter with the same index
+        static constexpr size_t default_copycounter_index = 2734987;
     } // namespace detail
 
-    // our old CopyCounter (just with some predefined but random index)
+    // our old CopyCounter (just with some predefined but random index) ✓
     using CopyCounter = IndexedCopyCounter<detail::default_copycounter_index>;
 
-    // creates by default our old CopyCounter
-    // Automatically calls reset().
+    // helper: make copy counter ✓
+    // creates by default our old CopyCounter; automatically calls reset()
     template <size_t index = detail::default_copycounter_index>
     IndexedCopyCounter<index>
     make_copy_counter()
@@ -126,11 +126,12 @@ namespace bits_of_q
     }
 } // namespace bits_of_q
 
-// This namespace contains small testing framework developed for this series to keep the number of dependencies low.
+// This namespace contains a small testing framework developed for this series to keep the number of dependencies low.
 // For any serious project, please use a well-established testing framework such as GoogleTest or Catch.
 namespace bits_of_q::testing
 {
-    // assert (throw/exception object)
+    // assert (throw/exception object) ✓
+    // Reminds of std::source_location.
     struct AssertFailed : std::runtime_error
     {
         explicit AssertFailed(std::string_view file_path,         //
@@ -145,13 +146,14 @@ namespace bits_of_q::testing
         std::string_view expression;
     };
 
-#define ASSERT(expr)                                                                                                             \
-    if (!(expr))                                                                                                                 \
-    {                                                                                                                            \
-        throw ::bits_of_q::testing::AssertFailed{__FILE__, __LINE__, #expr};                                                     \
+// ✓
+#define ASSERT(expr)                                                                                                                       \
+    if (not(expr))                                                                                                                         \
+    {                                                                                                                                      \
+        throw ::bits_of_q::testing::AssertFailed{__FILE__, __LINE__, #expr};                                                               \
     }
 
-    // simple tester class
+    // simple tester class ✓
     class Tester
     {
         // Unix terminal color codes.
@@ -161,7 +163,8 @@ namespace bits_of_q::testing
         static constexpr std::string_view color_green = "\033[32m";
 
       public:
-        // Executes the function FUNC outputting a banner at the start and end
+        // ✓
+        // Executes the function FUNC with no params outputting a banner at the start and end
         // as well as printing information on exceptions thrown by the function.
         template <typename FUNC>
         static void
@@ -184,12 +187,14 @@ namespace bits_of_q::testing
         }
 
       private:
+        // ✓
         static void
         print_test_start(std::string_view test_name)
         {
             std::cerr << color_green << "[ RUN      ] " << color_reset << test_name << "\n";
         }
 
+        // ✓
         static void
         print_test_end(std::string_view test_name, bool passed)
         {
@@ -203,6 +208,7 @@ namespace bits_of_q::testing
             }
         }
 
+        // ✓
         static void
         output_exception_info()
         {
@@ -226,8 +232,9 @@ namespace bits_of_q::testing
         }
     };
 
-    // tester builer
+    // tester builder
 
+    // ✓
     enum class Configuration
     {
         NON_CONST_LVALUE,
@@ -237,20 +244,20 @@ namespace bits_of_q::testing
         MAX_CONFIGURATION
     };
 
-    // number of configs
-    inline constexpr std::size_t num_configs = static_cast<int>(Configuration::MAX_CONFIGURATION);
+    // number of configs ✓
+    inline constexpr size_t num_configs = static_cast<size_t>(Configuration::MAX_CONFIGURATION);
 
-    // map enum config to string
+    // map enum config to string ✓
     static constexpr std::array<std::string_view, num_configs> g_config_string = {"&", "const &", "&&", "const &&"};
 
-    // convert enum config to string
+    // convert enum Configuration to string_view ✓
     constexpr std::string_view
     config_to_string(Configuration c)
     {
         return g_config_string[static_cast<size_t>(c)];
     }
 
-    // Builder declaration
+    // Builder declaration (defined later)
     template <Configuration... configs>
     class Builder;
 
@@ -260,7 +267,8 @@ namespace bits_of_q::testing
       public:
         // Executes functions with a builder for different configurations (see above) as input.
         // Example:
-        // if n_args == 2, the test function will execute the input function 4*4=16 times with the following builders
+        // if n_args == 2, the test function will execute the input function 4^2 = 4*4 = 16 times with the following builders
+        //                                                        4^0 4^1
         // func(Builder<NON_CONST_LVALUE, NON_CONST_LVALUE) // 0 = 0 + 0
         // func(Builder<CONST_LVALUE, NON_CONST_LVALUE)     // 1 = 1 + 0
         // func(Builder<NON_CONST_RVALUE, NON_CONST_LVALUE) // 2 = 2 + 0
@@ -282,11 +290,11 @@ namespace bits_of_q::testing
                 int                     failed_configs   = 0;
 
                 // i is an integral_constant
-                static_for<0, n_configurations>([&](auto i) {
+                static_for<0, n_configurations>([&](auto i) { // i is an integral_constant (see definition of static_for)
                     try
                     {
-                        // i is an integral_constant (see definition of static_for)
-                        execute_for_config<i.value>(std::make_index_sequence<n_args>{}, function);
+                        // execute_for_config<i.value>(std::make_index_sequence<n_args>{}, function);
+                        execute_for_config<i>(std::make_index_sequence<n_args>{}, function);
                     }
                     catch (...)
                     {
@@ -297,7 +305,7 @@ namespace bits_of_q::testing
 
                 if (failed_configs)
                 {
-                    throw std::runtime_error("Test failed for " + std::to_string(failed_configs) + " configurations");
+                    throw std::runtime_error("Test failed for " + std::to_string(failed_configs) + " configurations.");
                 };
             };
 
@@ -305,11 +313,13 @@ namespace bits_of_q::testing
         }
 
       private:
+        // ✓
         template <typename T>
         static constexpr T
         constexpr_pow(T num, unsigned int pow)
         {
             // if pow too big result will be 0 -> no functions generated
+            // multiply `num` `pow` times
             return (pow >= sizeof(unsigned int) * 8) ? 0 : pow == 0 ? 1 : num * constexpr_pow(num, pow - 1);
         }
 
@@ -325,8 +335,7 @@ namespace bits_of_q::testing
         static constexpr Configuration
         compute_arg_config()
         {
-            constexpr auto arg_config =
-                static_cast<Configuration>(size_t(config / constexpr_pow(num_configs, arg_index)) % num_configs);
+            constexpr auto arg_config = static_cast<Configuration>(size_t(config / constexpr_pow(num_configs, arg_index)) % num_configs);
 
             return arg_config;
         }
@@ -343,8 +352,7 @@ namespace bits_of_q::testing
             {
                 std::cerr << "Exception was thrown at " << e.file << ":" << e.line_nr << " :\n";
                 std::cerr << "ASSERT( " << e.expression
-                          << " ) evaluated to false with config: " << get_config_str<config>(std::make_index_sequence<n_args>{})
-                          << '\n';
+                          << " ) evaluated to false with config: " << get_config_str<config>(std::make_index_sequence<n_args>{}) << '\n';
             }
             catch (const std::exception &e)
             {
